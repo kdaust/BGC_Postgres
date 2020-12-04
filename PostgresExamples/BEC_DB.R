@@ -18,7 +18,12 @@ src_dbi(con)
 allDat <- tbl(con,"dat_comb") ## joins of the next two tables
 dat <- tbl(con,"cciss_400m") ## predicted BGC
 att <- tbl(con, "id_atts")##region district ID
-dat_norm <- tbl(con, "dat_comb_normal")
+dat_norm <- tbl(con, "cciss_normal")
+
+##Will - you probably want something like this
+datTemp <- dat %>%
+  filter(gcm %in% c(...), scenario == "xxx", futureperiod == "xxx") %>%
+  select(gcm,scenario,bgc,bgc_pred,siteno)
 
 ### user selected parameters
 
@@ -29,7 +34,6 @@ period <- select.list(c("Normal61","Current91", "2025","2055","2085"), multiple 
 outputName <- "MapTest91.gpkg"
 
 ##pull data using parameters
-
 if(any(period %in% c("2025","2055","2085"))){
   model <- select.list(mod.opts$gcm, multiple = T, graphics = T)
   scn <- select.list(c("rcp45","rcp85"), multiple = T, graphics = T)
@@ -39,6 +43,7 @@ if(any(period %in% c("2025","2055","2085"))){
     collect()
   datFut <- as.data.table(dat)
 }
+
 if(any(period %in% c("Normal61","Current91"))){
   per2 <- period
   dat <- dat_norm %>%
