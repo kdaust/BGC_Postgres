@@ -18,7 +18,7 @@ src_dbi(con)
 allDat <- tbl(con,"dat_comb") ## joins of the next two tables
 dat <- tbl(con,"cciss_400m") ## predicted BGC
 att <- tbl(con, "id_atts")##region district ID
-dat_norm <- tbl(con, "cciss_normal")
+dat_norm <- tbl(con, "dat_comb_normal")
 
 ##Will - you probably want something like this
 datTemp <- dat %>%
@@ -53,6 +53,7 @@ if(any(period %in% c("Normal61","Current91"))){
   datCurr <- as.data.table(dat)
 }
 
+
 grd <- st_read("D:/CommonTables/HexGrids/HexGrd400.gpkg")
 
 grd <- st_read(dsn = "/media/kiridaust/MrBig/BCGrid/HexGrd400.gpkg") ## base 400m hexgrid of province
@@ -72,7 +73,7 @@ if(exists("datFut")){
   foreach(mod = model, .combine = c) %:%
     foreach(s = scn, .combine = c) %:%
     foreach(per = period, .combine = c,.packages = c("sf","data.table")) %do% {
-      sub <- dat[gcm == mod & scenario == s & futureperiod == per,]
+      sub <- datFut[gcm == mod & scenario == s & futureperiod == per,]
       map <- merge(grd,sub, by = "siteno", all = F)
       
       mapComb <- aggregate(map[,"geometry"],  by = list(map$bgc_pred), FUN = mean)
@@ -81,6 +82,20 @@ if(exists("datFut")){
       st_write(mapComb, dsn = outputName, layer = paste(RegSelect,mod,s,per,sep = "_"), append = T)
       TRUE
     }
+}
+
+if(exists("datCurr")){
+  outname <- paste0("Current_",outputName)
+  foreach(per = unique(datCurr$period), .combine = c,.packages = c("sf","data.table")) %do% {
+    sub <- datCurr[period == per,]
+    map <- merge(grd,sub, by = "siteno", all = F)
+    
+    mapComb <- aggregate(map[,"geometry"],  by = list(map$bgc_pred), FUN = mean)
+    colnames(mapComb)[1] <- "BGC"
+    
+    st_write(mapComb, dsn = outputName, layer = paste(RegSelect,mod,s,per,sep = "_"), append = T)
+    TRUE
+  }
 }
 
 ##example despeckling
